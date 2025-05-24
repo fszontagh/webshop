@@ -10,10 +10,48 @@ class ItemController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $items = Item::all();
-        return view('items.index', compact('items'));
+        $query = Item::query();
+        
+        // Apply category filter
+        if ($request->has('category')) {
+            $query->where('category', $request->category);
+        }
+        
+        // Apply price filters
+        if ($request->has('min_price') && is_numeric($request->min_price)) {
+            $query->where('price', '>=', $request->min_price);
+        }
+        
+        if ($request->has('max_price') && is_numeric($request->max_price)) {
+            $query->where('price', '<=', $request->max_price);
+        }
+        
+        // Apply sorting
+        if ($request->has('sort')) {
+            switch ($request->sort) {
+                case 'newest':
+                    $query->orderBy('created_at', 'desc');
+                    break;
+                case 'price_asc':
+                    $query->orderBy('price', 'asc');
+                    break;
+                case 'price_desc':
+                    $query->orderBy('price', 'desc');
+                    break;
+                case 'name_asc':
+                    $query->orderBy('name', 'asc');
+                    break;
+                default:
+                    $query->orderBy('created_at', 'desc');
+            }
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+        
+        $items = $query->paginate(9);
+        return view('items.visitor-index', compact('items'));
     }
 
     /**
@@ -48,7 +86,7 @@ class ItemController extends Controller
     public function show(string $id)
     {
         $item = Item::findOrFail($id);
-        return view('items.show', compact('item'));
+        return view('items.visitor-show', compact('item'));
     }
 
     /**
