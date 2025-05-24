@@ -5,6 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Order;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\OrdersExport;
+use App\Exports\OrderReportExport;
 
 class OrderController extends Controller
 {
@@ -61,5 +66,51 @@ class OrderController extends Controller
 
         return redirect()->route('admin.orders.index')
             ->with('success', 'Order status updated successfully.');
+    }
+
+    /**
+     * Export orders to Excel.
+     */
+    public function export()
+    {
+        return Excel::download(new OrdersExport, 'orders_' . date('Y-m-d') . '.xlsx');
+    }
+
+    /**
+     * Show the order report form.
+     */
+    public function showReportForm()
+    {
+        return view('admin.orders.report-form');
+    }
+
+    /**
+     * Generate and download the order report.
+     */
+    public function generateReport(Request $request)
+    {
+        $request->validate([
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+            'report_type' => 'required|in:pdf,excel',
+        ]);
+
+        $dateFrom = Carbon::parse($request->date_from);
+        $dateTo = Carbon::parse($request->date_to);
+
+        // Generate the report based on the selected format
+        if ($request->report_type == 'pdf') {
+            $pdf = \PDF::loadView('admin.orders.report-pdf', [
+                'orders' => Order::with('user', 'orderItems.item')
+                    ->whereBetween('created_at', [$dateFrom, $dateTo])
+                    ->get(),
+                'dateFrom' => $dateFrom,
+                'dateTo' => $dateTo,
+            ]);
+
+            return $pdf->download('order_report_' . date('Y-m-d') . '.pdf');
+        } else {
+            return Excel::download(new OrderReportExport($dateFrom, $dateTo), 'order_report_' . date('Y-m-d') . '.xlsx');
+        }
     }
 }

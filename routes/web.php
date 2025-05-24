@@ -63,4 +63,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->name('admin.')->group(fun
     
     // Admin order routes
     Route::resource('orders', AdminOrderController::class)->except(['create', 'store', 'destroy']);
+    Route::get('orders/export', [AdminOrderController::class, 'export'])->name('orders.export');
+    Route::get('orders/report', [AdminOrderController::class, 'showReportForm'])->name('orders.report');
+    Route::post('orders/report', [AdminOrderController::class, 'generateReport'])->name('orders.generate-report');
 });
