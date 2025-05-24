@@ -111,3 +111,4 @@ The following components have been updated:
    - [x] Custom fonts and icons
    - [x] Animated elements
    - [x] Decorative elements (sparkles, hearts, stars)
+   - [ ] Remove css from blade files, move into the global css
